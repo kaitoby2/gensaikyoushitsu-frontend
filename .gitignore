@@ -1,0 +1,14 @@
+@"
+# build / cache
+dist/
+node_modules/
+.vite/
+*.log
+
+# Unity WebGL build (絶対に入れない)
+public/unity/
+
+# env
+.env
+.env.*
+"@ | Out-File -Encoding utf8 .gitignore
