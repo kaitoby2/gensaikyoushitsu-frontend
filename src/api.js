@@ -52,3 +52,20 @@ export async function apiUpload(path, file, extra = {}) {
   Object.entries(extra).forEach(([k, v]) => fd.append(k, String(v)));
   return apiPost(path, fd);
 }
+
+// 末尾に追加
+export async function apiUpload(path, formData) {
+  const url = `${API_BASE}${path}`;
+  console.log(`[UPLOAD] ${url}`, [...formData.entries()].map(([k,v]) => [k, v?.name || v]));
+  // ⚠️ Content-Type は自動付与させる（自分で headers を付けない）
+  const r = await fetch(url, { method: "POST", body: formData });
+  const ct = r.headers.get("content-type") || "";
+  if (!r.ok) {
+    const msg = ct.includes("application/json")
+      ? (await r.json())?.detail || `${r.status} ${r.statusText}`
+      : `${r.status} ${r.statusText}`;
+    throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+  }
+  return ct.includes("application/json") ? r.json() : {};
+}
+
