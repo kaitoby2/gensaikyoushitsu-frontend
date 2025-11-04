@@ -356,10 +356,11 @@ export default function App() {
             fd.append("persons", String(inv.persons));
             fd.append("conf_thresh", "0.5");
 
-            // 成功レスポンス
+            // 共通アップロードヘルパー（Content-Type/エラー整形込み）
             const d = await apiUpload(`/inventory/photo`, fd);
             const visPath = d.visual_path || d.image_url || d.result_url || "";
-            setPhotoResultUrl(visPath ? `${API_BASE}${visPath}` : "");
+            const visUrl = visPath ? (visPath.startsWith("http") ? visPath : `${API_BASE}${visPath}`) : "";
+            setPhotoResultUrl(visUrl);
 
             // 数をフォームに反映
             setInv((v) => ({
