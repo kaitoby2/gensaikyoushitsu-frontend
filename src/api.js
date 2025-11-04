@@ -1,62 +1,45 @@
-// src/api.js
-
 // =============================
-// APIベースURL
+// APIベースURL設定
 // =============================
 export const API_BASE =
   (import.meta.env && import.meta.env.VITE_API_BASE) ||
   "http://localhost:8000";
 
 // =============================
-// 共通GET
+// 共通GETメソッド
 // =============================
 export async function apiGet(path) {
   const url = `${API_BASE}${path}`;
-  const r = await fetch(url);
+  const r = await fetch(url, { credentials: "include" });
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   return r.json();
 }
 
 // =============================
-// 共通POST（FormData対応）
+// 共通POSTメソッド
 // =============================
-export async function apiPost(path, body) {
+export async function apiPost(path, body = {}) {
   const url = `${API_BASE}${path}`;
-  const isForm =
-    typeof FormData !== "undefined" && body instanceof FormData;
-
-  const headers = {};
-  if (!isForm) headers["Content-Type"] = "application/json";
-
   const r = await fetch(url, {
     method: "POST",
-    headers,
-    body: isForm ? body : JSON.stringify(body ?? {}),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    credentials: "include",
   });
-
-  if (!r.ok) {
-    const text = await r.text().catch(() => "");
-    throw new Error(`${r.status} ${r.statusText} ${text}`);
-  }
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   return r.json();
 }
 
 // =============================
-// 画像アップロード用ヘルパ
+// 共通UPLOAD（FormData）
 // =============================
-export async function apiUpload(path, file, extra = {}) {
-  const fd = new FormData();
-  // ★ FastAPI 側は "file" というフィールド名で受け取る想定
-  fd.append("file", file);
-  // 追加の数値や文字列があればここで一緒に送れる
-  Object.entries(extra).forEach(([k, v]) => fd.append(k, String(v)));
-  return apiPost(path, fd);
-}
-
-// 末尾に追加
 export async function apiUpload(path, formData) {
   const url = `${API_BASE}${path}`;
-  const r = await fetch(url, { method: "POST", body: formData }); // ← ヘッダ付けない！
+  const r = await fetch(url, {
+    method: "POST",
+    body: formData,          // ← Content-Typeは付けない（ブラウザ任せ）
+    credentials: "include",
+  });
   const ct = r.headers.get("content-type") || "";
   if (!r.ok) {
     const msg = ct.includes("application/json")
