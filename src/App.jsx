@@ -335,21 +335,45 @@ export default function App() {
 
     const onPickPhoto = async (file) => {
         if (!file) return;
+
+        // 画像以外は弾く（念のため）
+        if (!file.type?.startsWith("image/")) {
+            setErr("画像ファイルを選んでください");
+            return;
+        }
+
         setErr("");
         setBusy(true);
+        setPhotoResultUrl(""); // 前の結果画像をクリア
         try {
+            // プレビュー
             setPhotoPreviewUrl(URL.createObjectURL(file));
+
+            // FormData: バックエンドの両パターンに対応（"file" / "image"）
             const fd = new FormData();
-            fd.append("image", file);
+            fd.append("file", file);     // ★ FastAPI でよくある名前
+            fd.append("image", file);    // ★ 旧実装互換のため残す
             fd.append("persons", String(inv.persons));
             fd.append("conf_thresh", "0.5");
-            const r = await fetch(`${API_BASE}/inventory/photo`, { method: "POST", body: fd });
-            if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-            const d = await r.json();
 
-            const visPath = d.visual_path || d.image_url || "";
+            // Content-Type は自動付与させる（自分で headers を付けない）
+            const r = await fetch(`${API_BASE}/inventory/photo`, { method: "POST", body: fd });
+
+            // 失敗時の詳細を出す（FastAPI は detail を返すことが多い）
+            const ct = r.headers.get("content-type") || "";
+            if (!r.ok) {
+                const msg = ct.includes("application/json")
+                    ? (await r.json())?.detail || `${r.status} ${r.statusText}`
+                    : `${r.status} ${r.statusText}`;
+                throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+            }
+
+            // 成功レスポンス
+            const d = ct.includes("application/json") ? await r.json() : {};
+            const visPath = d.visual_path || d.image_url || d.result_url || "";
             setPhotoResultUrl(visPath ? `${API_BASE}${visPath}` : "");
 
+            // 数をフォームに反映
             setInv((v) => ({
                 ...v,
                 bottles500: Number(d?.counts?.water_500ml ?? v.bottles500 ?? 0),
@@ -367,6 +391,7 @@ export default function App() {
             setBusy(false);
         }
     };
+
 
     /** ============ 評価 & 保存/復元 ============ */
     const answersArray = useMemo(
