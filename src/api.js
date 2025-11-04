@@ -1,5 +1,7 @@
+// src/api.js
+
 // =============================
-// APIベースURL設定
+// APIベースURL
 // =============================
 export const API_BASE =
   (import.meta.env && import.meta.env.VITE_API_BASE) ||
@@ -20,9 +22,9 @@ export async function apiGet(path) {
 // =============================
 export async function apiPost(path, body) {
   const url = `${API_BASE}${path}`;
+  const isForm =
+    typeof FormData !== "undefined" && body instanceof FormData;
 
-  // FormData のときは Content-Type を付けない（ブラウザが自動付与）
-  const isForm = typeof FormData !== "undefined" && body instanceof FormData;
   const headers = {};
   if (!isForm) headers["Content-Type"] = "application/json";
 
@@ -33,19 +35,20 @@ export async function apiPost(path, body) {
   });
 
   if (!r.ok) {
-    // レスポンス本文を読み取ってエラーに含めるとデバッグしやすい
     const text = await r.text().catch(() => "");
     throw new Error(`${r.status} ${r.statusText} ${text}`);
   }
-  // 画像アップロードも JSON を返す想定
   return r.json();
 }
 
 // =============================
-// 画像アップロード用ヘルパ（お好みで）
+// 画像アップロード用ヘルパ
 // =============================
-export async function apiUpload(path, file, fieldName = "file") {
+export async function apiUpload(path, file, extra = {}) {
   const fd = new FormData();
-  fd.append(fieldName, file); // ← FastAPI 側は "file" で受け取る
+  // ★ FastAPI 側は "file" というフィールド名で受け取る想定
+  fd.append("file", file);
+  // 追加の数値や文字列があればここで一緒に送れる
+  Object.entries(extra).forEach(([k, v]) => fd.append(k, String(v)));
   return apiPost(path, fd);
 }
