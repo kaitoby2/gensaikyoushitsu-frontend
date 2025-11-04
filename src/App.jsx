@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { API_BASE, apiGet, apiPost } from "./api";
+import { API_BASE, apiGet, apiPost, apiUpload } from "./api";
 import "./App.css";
 import UnityWebGLPlayer from "./UnityWebGLPlayer.jsx";
 
@@ -356,20 +356,8 @@ export default function App() {
             fd.append("persons", String(inv.persons));
             fd.append("conf_thresh", "0.5");
 
-            // Content-Type は自動付与させる（自分で headers を付けない）
-            const r = await fetch(`${API_BASE}/inventory/photo`, { method: "POST", body: fd });
-
-            // 失敗時の詳細を出す（FastAPI は detail を返すことが多い）
-            const ct = r.headers.get("content-type") || "";
-            if (!r.ok) {
-                const msg = ct.includes("application/json")
-                    ? (await r.json())?.detail || `${r.status} ${r.statusText}`
-                    : `${r.status} ${r.statusText}`;
-                throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
-            }
-
             // 成功レスポンス
-            const d = ct.includes("application/json") ? await r.json() : {};
+            const d = await apiUpload(`/inventory/photo`, fd);
             const visPath = d.visual_path || d.image_url || d.result_url || "";
             setPhotoResultUrl(visPath ? `${API_BASE}${visPath}` : "");
 
