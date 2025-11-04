@@ -345,23 +345,24 @@ export default function App() {
         setErr("");
         setBusy(true);
         setPhotoResultUrl(""); // 前の結果画像をクリア
+
         try {
             // プレビュー
             setPhotoPreviewUrl(URL.createObjectURL(file));
 
             // FormData: バックエンドの両パターンに対応（"file" / "image"）
             const fd = new FormData();
-            fd.append("file", file);     // ★ FastAPI でよくある名前
-            fd.append("persons", String(inv.persons));
-            fd.append("conf_thresh", "0.5");
+            fd.append("image", file);     // FastAPIが"image"という名前で受け取る場合
+            fd.append("persons", String(inv.persons));  // 人数情報を添付
+            fd.append("conf_thresh", "0.5");  // 信頼度の閾値
 
-            // 共通アップロードヘルパー（Content-Type/エラー整形込み）
-            const d = await apiUpload(`/inventory/photo`, fd);
+            // 画像アップロード（共通ヘルパーでの送信）
+            const response = await apiUpload(`/inventory/photo`, fd);
 
             // レスポンスデータ（Visual Path の取得）
             const visPath = response.visual_path || response.image_url || response.result_url || "";
             const visUrl = visPath ? (visPath.startsWith("http") ? visPath : `${API_BASE}${visPath}`) : "";
-            setPhotoResultUrl(visUrl);　// 結果画像のURLをセット
+            setPhotoResultUrl(visUrl);  // 結果画像のURLをセット
 
             // 数をフォームに反映
             setInv((prevInv) => ({
@@ -371,17 +372,17 @@ export default function App() {
                 overrideLiters: typeof response.total_l === "number" ? true : prevInv.overrideLiters,
                 water_l: typeof response.total_l === "number" ? Number(response.total_l) : prevInv.water_l,
             }));
+
             // 推定日数があればセット
             if (typeof response.estimated_days === "number") {
                 setInvResult({ estimated_days: response.estimated_days });
             }
         } catch (error) {
-            setErr(error?.message || "画像解析に失敗しました");
+            setErr(error?.message || "画像解析に失敗しました");  // エラーメッセージをセット
         } finally {
-            setBusy(false);
+            setBusy(false);  // 処理終了
         }
     };
-
 
     /** ============ 評価 & 保存/復元 ============ */
     const answersArray = useMemo(
