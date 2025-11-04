@@ -1,5 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { API_BASE, apiGet, apiUpload } from "./api";
+import { useEffect, useMemo, useState } from "react";
+import { API_BASE, apiGet, apiPost } from "./api";
 import "./App.css";
 import UnityWebGLPlayer from "./UnityWebGLPlayer.jsx";
 
@@ -295,62 +295,78 @@ export default function App() {
     const setAnswer = (id, value) => setAnswersMap((prev) => ({ ...prev, [id]: value }));
 
     /** ============ 備蓄診断（水） ============ */
+    const [inv, setInv] = useState({
+        persons: 1,
+        bottles500: 0,
+        bottles2l: 0,
+        water_l: 0,
+        overrideLiters: false,
+    });
+    const calcWaterLiters = useMemo(
+        () =>
+            inv.overrideLiters ? Number(inv.water_l) : Number(inv.bottles500) * 0.5 + Number(inv.bottles2l) * 2,
+        [inv.bottles500, inv.bottles2l, inv.overrideLiters, inv.water_l]
+    );
+    const [invResult, setInvResult] = useState(null);
+    const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
+    const [photoResultUrl, setPhotoResultUrl] = useState("");
+    const [busy, setBusy] = useState(false);
+    const [err, setErr] = useState("");
+
+    const analyzeInventory = async (e) => {
+        e?.preventDefault();
+        setErr("");
+        setBusy(true);
+        try {
+            const qs = new URLSearchParams({
+                water_l: String(calcWaterLiters),
+                meals: String(0),
+                toilet_bags: String(0),
+                persons: String(inv.persons),
+            }).toString();
+            const d = await apiPost(`/inventory/analyze?${qs}`);
+            setInvResult(d);
+        } catch (error) {
+            setErr(error?.message || "診断に失敗しました");
+        } finally {
+            setBusy(false);
+        }
+    };
+
     const onPickPhoto = async (file) => {
-  if (!file) return;
-  if (!file.type?.startsWith("image/")) {
-    alert("画像ファイルを選んでください");
-    return;
-  }
+        if (!file) return;
+        setErr("");
+        setBusy(true);
+        try {
+            setPhotoPreviewUrl(URL.createObjectURL(file));
+            const fd = new FormData();
+            fd.append("image", file);
+            fd.append("persons", String(inv.persons));
+            fd.append("conf_thresh", "0.5");
+            const r = await fetch(`${API_BASE}/inventory/photo`, { method: "POST", body: fd });
+            if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+            const d = await r.json();
 
-  setErr("");
-  setBusy(true);
+            const visPath = d.visual_path || d.image_url || "";
+            setPhotoResultUrl(visPath ? `${API_BASE}${visPath}` : "");
 
-  try {
-    // プレビュー
-    setPhotoPreviewUrl(URL.createObjectURL(file));
+            setInv((v) => ({
+                ...v,
+                bottles500: Number(d?.counts?.water_500ml ?? v.bottles500 ?? 0),
+                bottles2l: Number(d?.counts?.water_2l ?? v.bottles2l ?? 0),
+                overrideLiters: typeof d.total_l === "number" ? true : v.overrideLiters,
+                water_l: typeof d.total_l === "number" ? Number(d.total_l) : v.water_l,
+            }));
 
-    // FormData を正しく作成（「image」と「file」の両方を入れて互換確保）
-    const fd = new FormData();
-    fd.append("image", file);          // 旧／一部実装で使っていた名前
-    fd.append("file", file);           // FastAPI で一般的な名前
-    fd.append("persons", String(inv.persons));
-    fd.append("conf_thresh", "0.5");
-
-    // Content-Type ヘッダはつけない（ブラウザが boundary 付きで自動設定）
-    const r = await fetch(`${API_BASE}/inventory/photo`, { method: "POST", body: fd });
-
-    // 失敗時は FastAPI の detail を表示
-    const ct = r.headers.get("content-type") || "";
-    if (!r.ok) {
-      const msg = ct.includes("application/json")
-        ? (await r.json())?.detail || `${r.status} ${r.statusText}`
-        : `${r.status} ${r.statusText}`;
-      throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
-    }
-
-    // 成功時の取り出し
-    const d = ct.includes("application/json") ? await r.json() : {};
-    const visPath = d.visual_path || d.image_url || d.result_url || "";
-    setPhotoResultUrl(visPath ? `${API_BASE}${visPath}` : "");
-
-    // 推定結果をフォームに反映（在庫換算）
-    setInv((v) => ({
-      ...v,
-      bottles500: Number(d?.counts?.water_500ml ?? v.bottles500 ?? 0),
-      bottles2l:  Number(d?.counts?.water_2l    ?? v.bottles2l  ?? 0),
-      overrideLiters: typeof d.total_l === "number" ? true : v.overrideLiters,
-      water_l: typeof d.total_l === "number" ? Number(d.total_l) : v.water_l,
-    }));
-
-    if (typeof d.estimated_days === "number") {
-      setInvResult({ estimated_days: d.estimated_days });
-    }
-  } catch (error) {
-    setErr(error?.message || "画像解析に失敗しました");
-  } finally {
-    setBusy(false);
-  }
-};
+            if (typeof d.estimated_days === "number") {
+                setInvResult({ estimated_days: d.estimated_days });
+            }
+        } catch (error) {
+            setErr(error?.message || "画像解析に失敗しました");
+        } finally {
+            setBusy(false);
+        }
+    };
 
     /** ============ 評価 & 保存/復元 ============ */
     const answersArray = useMemo(
