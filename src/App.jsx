@@ -352,27 +352,28 @@ export default function App() {
             // FormData: バックエンドの両パターンに対応（"file" / "image"）
             const fd = new FormData();
             fd.append("file", file);     // ★ FastAPI でよくある名前
-            fd.append("image", file);    // ★ 旧実装互換のため残す
             fd.append("persons", String(inv.persons));
             fd.append("conf_thresh", "0.5");
 
             // 共通アップロードヘルパー（Content-Type/エラー整形込み）
             const d = await apiUpload(`/inventory/photo`, fd);
-            const visPath = d.visual_path || d.image_url || d.result_url || "";
+
+            // レスポンスデータ（Visual Path の取得）
+            const visPath = response.visual_path || response.image_url || response.result_url || "";
             const visUrl = visPath ? (visPath.startsWith("http") ? visPath : `${API_BASE}${visPath}`) : "";
-            setPhotoResultUrl(visUrl);
+            setPhotoResultUrl(visUrl);　// 結果画像のURLをセット
 
             // 数をフォームに反映
-            setInv((v) => ({
-                ...v,
-                bottles500: Number(d?.counts?.water_500ml ?? v.bottles500 ?? 0),
-                bottles2l: Number(d?.counts?.water_2l ?? v.bottles2l ?? 0),
-                overrideLiters: typeof d.total_l === "number" ? true : v.overrideLiters,
-                water_l: typeof d.total_l === "number" ? Number(d.total_l) : v.water_l,
+            setInv((prevInv) => ({
+                ...prevInv,
+                bottles500: Number(response?.counts?.water_500ml ?? prevInv.bottles500 ?? 0),
+                bottles2l: Number(response?.counts?.water_2l ?? prevInv.bottles2l ?? 0),
+                overrideLiters: typeof response.total_l === "number" ? true : prevInv.overrideLiters,
+                water_l: typeof response.total_l === "number" ? Number(response.total_l) : prevInv.water_l,
             }));
-
-            if (typeof d.estimated_days === "number") {
-                setInvResult({ estimated_days: d.estimated_days });
+            // 推定日数があればセット
+            if (typeof response.estimated_days === "number") {
+                setInvResult({ estimated_days: response.estimated_days });
             }
         } catch (error) {
             setErr(error?.message || "画像解析に失敗しました");
