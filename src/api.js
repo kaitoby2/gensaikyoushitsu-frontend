@@ -1,34 +1,51 @@
-﻿// =============================
+// =============================
 // APIベースURL設定
 // =============================
-// .env.development または .env.production の内容を自動的に読み込む。
-// フォールバックとして localhost を指定しておくと安全。
 export const API_BASE =
-    (import.meta.env && import.meta.env.VITE_API_BASE) ||
-    "http://localhost:8000";
+  (import.meta.env && import.meta.env.VITE_API_BASE) ||
+  "http://localhost:8000";
 
 // =============================
-// 共通GETメソッド
+// 共通GET
 // =============================
 export async function apiGet(path) {
-    const url = `${API_BASE}${path}`;
-    console.log(`[GET] ${url}`); // デバッグ用ログ（本番では削除OK）
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-    return r.json();
+  const url = `${API_BASE}${path}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
 }
 
 // =============================
-// 共通POSTメソッド
+// 共通POST（FormData対応）
 // =============================
 export async function apiPost(path, body) {
-    const url = `${API_BASE}${path}`;
-    console.log(`[POST] ${url}`, body); // デバッグ用ログ
-    const r = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body ?? {}),
-    });
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-    return r.json();
+  const url = `${API_BASE}${path}`;
+
+  // FormData のときは Content-Type を付けない（ブラウザが自動付与）
+  const isForm = typeof FormData !== "undefined" && body instanceof FormData;
+  const headers = {};
+  if (!isForm) headers["Content-Type"] = "application/json";
+
+  const r = await fetch(url, {
+    method: "POST",
+    headers,
+    body: isForm ? body : JSON.stringify(body ?? {}),
+  });
+
+  if (!r.ok) {
+    // レスポンス本文を読み取ってエラーに含めるとデバッグしやすい
+    const text = await r.text().catch(() => "");
+    throw new Error(`${r.status} ${r.statusText} ${text}`);
+  }
+  // 画像アップロードも JSON を返す想定
+  return r.json();
+}
+
+// =============================
+// 画像アップロード用ヘルパ（お好みで）
+// =============================
+export async function apiUpload(path, file, fieldName = "file") {
+  const fd = new FormData();
+  fd.append(fieldName, file); // ← FastAPI 側は "file" で受け取る
+  return apiPost(path, fd);
 }
