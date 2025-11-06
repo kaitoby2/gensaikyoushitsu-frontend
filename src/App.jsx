@@ -80,6 +80,13 @@ export default function App() {
         setScreen("login");
     }, []);
 
+    // === 管理者モード state ===
+    const [adminToken, setAdminToken] = useState("");
+    const [adminUsers, setAdminUsers] = useState([]); // /admin/users の結果
+    const [adminScreen, setAdminScreen] = useState("list"); // list | detail
+    const [adminSelectedUser, setAdminSelectedUser] = useState(null);
+    const [adminRows, setAdminRows] = useState([]); // /admin/responses
+    
     /** ============ ユーザー切替時クリア ============ */
     const clearPerUserState = () => {
         // 設問・スコア・助言
@@ -436,6 +443,7 @@ export default function App() {
                 scenario_path: path,
                 inventory_days: invResult?.estimated_days ?? 0,
                 score: d,
+                group_id: (groupID || "").trim() || null,
                 advice: [],
             });
         } catch (error) {
@@ -467,6 +475,7 @@ export default function App() {
                 inventory_days: invResult?.estimated_days ?? 0,
                 score,
                 advice: actions,
+                group_id: (groupID || "").trim() || null,
             });
         } catch (error) {
             setErr(error?.message || "アドバイスの取得に失敗しました");
@@ -602,6 +611,91 @@ export default function App() {
     }, [userId]);
 
     /** ============ ここから画面切り替え描画 ============ */
+    // === 管理者画面 ===
+    if (screen === "admin") {
+      return (
+        <div className="container">
+          <h1>管理者ダッシュボード</h1>
+          <div className="row" style={{ gap: 8, marginBottom: 12 }}>
+            <button onClick={async () => {
+              const u = await apiGetAuth("/admin/users", adminToken);
+              setAdminUsers(Array.isArray(u.users) ? u.users : []);
+              setAdminScreen("list");
+            }}>更新</button>
+            <button onClick={() => { setScreen("login"); setAdminToken(""); }}>ログアウト</button>
+          </div>
+    
+          {adminScreen === "list" && (
+            <table className="progress-table">
+              <thead>
+                <tr>
+                  <th>ユーザー</th>
+                  <th>ID</th>
+                  <th>件数</th>
+                  <th>最終回答</th>
+                  <th>所属チーム</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {(adminUsers || []).map((u, i) => (
+                  <tr key={i}>
+                    <td>{u.user_name || "(未設定)"}</td>
+                    <td><code>{u.user_id}</code></td>
+                    <td>{u.count}</td>
+                    <td>{u.last_seen}</td>
+                    <td>{(u.groups || []).join(", ") || "-"}</td>
+                    <td>
+                      <button onClick={async () => {
+                        setAdminSelectedUser(u);
+                        const rows = await apiGetAuth(`/admin/responses?user_id=${encodeURIComponent(u.user_id)}`, adminToken);
+                        setAdminRows(Array.isArray(rows) ? rows : []);
+                        setAdminScreen("detail");
+                      }}>詳細</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+    
+          {adminScreen === "detail" && (
+            <div>
+              <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                <h2 style={{ margin: 0 }}>ユーザー詳細：{adminSelectedUser?.user_name || "(未設定)"} (<code>{adminSelectedUser?.user_id}</code>)</h2>
+                <button onClick={() => setAdminScreen("list")}>一覧に戻る</button>
+              </div>
+              <table className="progress-table" style={{ marginTop: 12 }}>
+                <thead>
+                  <tr>
+                    <th>日時</th>
+                    <th>チーム</th>
+                    <th>スコア</th>
+                    <th>回答数</th>
+                    <th>アドバイス</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(adminRows || []).map((r, i) => (
+                    <tr key={i}>
+                      <td>{r.created_at}</td>
+                      <td>{r.group_id || "-"}</td>
+                      <td>{r.score ?? "-"}</td>
+                      <td>{Array.isArray(r.answers) ? r.answers.length : 0}</td>
+                      <td>
+                        <ul style={{ margin: 0, paddingLeft: 16 }}>
+                          {(r.advice || []).map((a, j) => <li key={j}>{a}</li>)}
+                        </ul>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      );
+    }
 
     // ログイン画面（既存ユーザーを選ぶ）
     if (screen === "login") {
