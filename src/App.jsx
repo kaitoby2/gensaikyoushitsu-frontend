@@ -1287,7 +1287,7 @@ export default function App() {
                                 <button onClick={() => setIsUnityOpen(false)} className="btn-ghost">閉じる</button>
                             </div>
                             <p className="muted" style={{ marginTop: 0 }}>
-                                画面をクリック（タップ）した地点から散策を開始できます。閉じるとこのページに戻ります。
+                                岐阜市が想定している岐阜駅周辺の浸水状況を確認してみよう！！
                             </p>
                             <UnityWebGLPlayer />
                         </div>
