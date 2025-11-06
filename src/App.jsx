@@ -644,7 +644,7 @@ export default function App() {
                     <td><code>{u.user_id}</code></td>
                     <td>{u.count}</td>
                     <td>{u.last_seen}</td>
-                    <td>{(u.groups_id || []).join(", ") || "-"}</td>
+                    <td>{(u.groups || []).join(", ") || "-"}</td>
                     <td>
                       <button onClick={async () => {
                         setAdminSelectedUser(u);
