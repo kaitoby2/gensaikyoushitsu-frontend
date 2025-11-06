@@ -739,11 +739,7 @@ export default function App() {
             </div>
         );
     }
-                </div>
-            </div>
-        );
-    }
-
+    
     // 新規ユーザー登録画面
     if (screen === "create") {
         return (
