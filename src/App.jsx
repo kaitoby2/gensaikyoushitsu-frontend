@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { API_BASE, apiGet, apiPost, apiUpload } from "./api";
+import { API_BASE, apiGet, apiPost, apiUpload, apiGetAuth } from "./api";
 import "./App.css";
 import UnityWebGLPlayer from "./UnityWebGLPlayer.jsx";
 
