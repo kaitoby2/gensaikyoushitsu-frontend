@@ -644,7 +644,7 @@ export default function App() {
                     <td><code>{u.user_id}</code></td>
                     <td>{u.count}</td>
                     <td>{u.last_seen}</td>
-                    <td>{(u.groups || []).join(", ") || "-"}</td>
+                    <td>{(u.groupName || []).join(", ") || "-"}</td>
                     <td>
                       <button onClick={async () => {
                         setAdminSelectedUser(u);
@@ -679,7 +679,7 @@ export default function App() {
                   {(adminRows || []).map((r, i) => (
                     <tr key={i}>
                       <td>{r.created_at}</td>
-                      <td>{r.group_id || "-"}</td>
+                      <td>{r.groupID || "-"}</td>
                       <td>{r.score ?? "-"}</td>
                       <td>{Array.isArray(r.answers) ? r.answers.length : 0}</td>
                       <td>
