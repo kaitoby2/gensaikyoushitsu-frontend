@@ -442,7 +442,7 @@ export default function App() {
                 answers: answersArray,
                 scenario_path: path,
                 inventory_days: invResult?.estimated_days ?? 0,
-                score: d.score_total, // ★ 修正: スコア合計値（数値）を保存
+                score: d, // ★ 修正: スコア合計値（数値）を保存
                 group_id: (groupID || "").trim() || null,
                 advice: [],
             });
@@ -473,7 +473,7 @@ export default function App() {
                 answers: answersArray,
                 scenario_path: path,
                 inventory_days: invResult?.estimated_days ?? 0,
-                score: score.score_total, // ★ 修正: score オブジェクトから score_total（数値）を取得
+                score, // ★ 修正: score オブジェクトから score_total（数値）を取得
                 advice: actions,
                 group_id: (groupID || "").trim() || null,
             });
