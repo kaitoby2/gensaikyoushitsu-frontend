@@ -68,3 +68,37 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* 画像診断（プレビュー＋検出結果） */
+.photo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap; /* 画面が狭いときは折り返す */
+  margin-top: 8px;
+}
+
+.photo-col {
+  flex: 1 1 280px;         /* 最低幅を確保しつつ、横に並ぶ */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 画像をほどよいサイズに収める（既にあればそのままでOK） */
+.imgbox {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 真ん中の矢印 */
+.photo-arrow {
+  align-self: center;
+  font-size: 32px;
+  line-height: 1;
+  opacity: 0.7;
+  padding: 0 4px;
+}
