@@ -706,6 +706,39 @@ export default function App() {
                             （開発用）保存された全ユーザーを削除
                         </button>
                     </div>
+                    {/* 管理者ログイン */}
+                    <button
+                        onClick={async () => {
+                        const t = prompt("管理者トークンを入力してください");
+                        if (!t) return;
+                        try {
+                        　await apiGetAuth("/admin/ping", t);
+                        　setAdminToken(t);
+                        　const u = await apiGetAuth("/admin/users", t);
+                        　setAdminUsers(Array.isArray(u.users) ? u.users : []);
+                        　setScreen("admin");
+                        } catch (e) {
+                        　alert("認証に失敗しました: " + (e?.message || ""));
+                        }
+                    　}}
+                    　style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        border: "1px solid #94a3b8",
+                        background: "#fff",
+                        color: "#0f172a",
+                        fontSize: 14,
+                        cursor: "pointer",
+                        marginTop: 12,
+                    　}}
+                    >
+                    　管理者ログイン
+                    </button>
+                </div>
+            </div>
+        );
+    }
                 </div>
             </div>
         );
