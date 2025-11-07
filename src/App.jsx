@@ -442,8 +442,8 @@ export default function App() {
                 answers: answersArray,
                 scenario_path: path,
                 inventory_days: invResult?.estimated_days ?? 0,
-                score: d, // ★ 修正: スコア合計値（数値）を保存
-                group_id: (groupID || "").trim() || null,
+                score: d, // ← スコアはオブジェクトでOK（バックエンドでscore_totalを抜いています）
+                group_id: (groupId || "").trim() || null, // ★ 変数名修正
                 advice: [],
             });
         } catch (error) {
@@ -473,9 +473,9 @@ export default function App() {
                 answers: answersArray,
                 scenario_path: path,
                 inventory_days: invResult?.estimated_days ?? 0,
-                score, // ★ 修正: score オブジェクトから score_total（数値）を取得
+                score, // ← そのままオブジェクトで保存してOK
                 advice: actions,
-                group_id: (groupID || "").trim() || null,
+                group_id: (groupId || "").trim() || null, // ★ 変数名修正
             });
         } catch (error) {
             setErr(error?.message || "アドバイスの取得に失敗しました");
@@ -512,6 +512,7 @@ export default function App() {
             if (d.group_id) {
                 setGroupId(d.group_id);
                 setJustCreatedId(d.group_id);
+                localStorage.setItem(LS_GROUP_ID, d.group_id); // ★ 追加
                 alert(`グループを作成しました: ${d.group_id}`);
                 await fetchGroupProgress(d.group_id);
             }
@@ -533,6 +534,7 @@ export default function App() {
             const d = await r.json();
             if (d.group_id) {
                 alert("参加しました");
+                localStorage.setItem(LS_GROUP_ID, gid); // ★ 追加：保持
                 await fetchGroupProgress(gid);
             }
         } catch (err) {
@@ -607,6 +609,11 @@ export default function App() {
                 setInvResult({ estimated_days: last.inventory_days });
             }
             if (Array.isArray(last.advice)) setAdvice(last.advice);
+            // ★ 追加：最後の記録にgroup_idがあれば反映＆保持
+            if (last.group_id) {
+                setGroupId(last.group_id);
+                localStorage.setItem(LS_GROUP_ID, last.group_id);
+            }
         })();
     }, [userId]);
 
@@ -644,7 +651,7 @@ export default function App() {
                     <td><code>{u.user_id}</code></td>
                     <td>{u.count}</td>
                     <td>{u.last_seen}</td>
-                    <td>{(u.groupName || []).join(", ") || "-"}</td>
+                    <td>{(u.groups || []).join(", ") || "-"}</td>  {/* ★ 修正：groups */}
                     <td>
                       <button onClick={async () => {
                         setAdminSelectedUser(u);
@@ -679,7 +686,7 @@ export default function App() {
                   {(adminRows || []).map((r, i) => (
                     <tr key={i}>
                       <td>{r.created_at}</td>
-                      <td>{r.groupID || "-"}</td>
+                      <td>{r.group_id || "-"}</td>  {/* ★ 修正：group_id */}
                       <td>{r.score ?? "-"}</td>
                       <td>{Array.isArray(r.answers) ? r.answers.length : 0}</td>
                       <td>
