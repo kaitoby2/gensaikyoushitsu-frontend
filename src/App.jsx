@@ -8,6 +8,7 @@ const LS_USERS = "demo_users"; // [{id,name}]
 const LS_CURRENT_USER_ID = "demo_current_user_id";
 const LS_LEGACY_NAME = "demo_user_name";
 const LS_LEGACY_ID = "demo_user_id";
+const LS_GROUP_ID = "demo_group_id"; // ★ 追加：チームID保存用キー
 
 /** ====== ユーティリティ ====== */
 const generateUserId = () => "u" + Math.random().toString(36).slice(2, 10);
@@ -158,6 +159,9 @@ export default function App() {
 
         alert(`ようこそ、${name} さん！（ID: ${id}）`);
         setScreen("main");
+        // ★ 追加（任意）：保存済みチームIDの自動復元
+        const gid = (localStorage.getItem(LS_GROUP_ID) || "").trim();
+        if (gid) setGroupId(gid);
     };
 
     const goToCreate = () => {
