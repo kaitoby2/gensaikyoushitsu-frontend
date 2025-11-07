@@ -63,6 +63,16 @@ export default function App() {
     const [selectedUserId, setSelectedUserId] = useState(""); // ログイン画面用
     const [createName, setCreateName] = useState(""); // 新規登録画面用
 
+    // 送信前に溜めておく“下書き”
+    const [progressDraft, setProgressDraft] = useState({
+        created_at: null,      // ISO文字列
+        group_id: "",          // チームID
+        score_total: null,     // 数値
+        rank: "",              // "Beginner" 等
+        answers_count: 0,      // 回答数
+        advice: [],            // 文字列配列（後で {msg,done:false} に整形）
+    });
+
     // 現在ログイン中のユーザー（メイン画面で使用）
     const [userName, setUserName] = useState("");
     const [userId, setUserId] = useState("");
@@ -440,6 +450,15 @@ export default function App() {
             setAdvice([]);
             setShowComparison(false);
 
+            // 下書きを更新（この時点で日時・スコア・回答数を確定）
+            setProgressDraft((prev) => ({
+                ...prev,
+                created_at: prev.created_at || new Date().toISOString(),
+                answers_count: answersArray.length,
+                score_total: d?.score_total ?? null,
+                rank: d?.rank ?? "",
+            }));
+
             await saveResponse({
                 user_id: userId,
                 user_name: userName,
@@ -470,6 +489,14 @@ export default function App() {
             const d = await apiPost("/advice", body);
             const actions = Array.isArray(d.actions) ? d.actions : [];
             setAdvice(actions);
+
+            // 下書きにアドバイスと回答数・日時を保存（日時が未設定なら今）
+            setProgressDraft((prev) => ({
+                ...prev,
+                created_at: prev.created_at || new Date().toISOString(),
+                answers_count: answersArray.length,
+                advice: actions,
+            }));
 
             await saveResponse({
                 user_id: userId,
@@ -517,14 +544,9 @@ export default function App() {
                 setGroupId(d.group_id);
                 setJustCreatedId(d.group_id);
                 localStorage.setItem(LS_GROUP_ID, d.group_id); // ★ 追加
+                setProgressDraft((p) => ({ ...p, group_id: d.group_id }));
                 alert(`グループを作成しました: ${d.group_id}`);
-                await fetchGroupProgress(d.group_id);
-                // ★ 追加：所属だけを記録（管理画面の「所属チーム」に反映させる）
-                await saveResponse({
-                    user_id: userId,
-                    user_name: userName,
-                    group_id: d.group_id,
-                });
+                await fetchGroupProgress(d.group_id);   
             }
         } catch (err) {
             console.error(err);
@@ -546,12 +568,7 @@ export default function App() {
                 alert("参加しました");
                 localStorage.setItem(LS_GROUP_ID, gid); // ★ 追加：保持
                 await fetchGroupProgress(gid);
-                // ★ 追加：所属だけを記録
-                await saveResponse({
-                    user_id: userId,
-                    user_name: userName,
-                    group_id: gid,
-                });
+                setProgressDraft((p) => ({ ...p, group_id: gid }));
             }
         } catch (err) {
             console.error(err);
@@ -560,17 +577,29 @@ export default function App() {
     };
 
     const updateProgress = async () => {
-        if (!score) return alert("先にスコア計算してください");
-        if (!groupId.trim()) return alert("チームIDが未入力です");
+        const gid = (progressDraft.group_id || groupId).trim();
+        if (!gid) return alert("チームIDが未入力です");
+        // スコアは下書き優先、なければ現在のscoreから
+        const score_total = progressDraft.score_total ?? score?.score_total;
+        const rank = progressDraft.rank ?? score?.rank;
+        if (score_total == null || !rank) {
+            return alert("先にスコア計算してください");
+        }
         try {
             const body = {
                 user_id: userId,
                 user_name: userName,
-                group_id: groupId.trim(),
-                score: score.score_total,
-                rank: score.rank,
-                advice: (advice || []).map((a) => ({ msg: a, done: false })),
-                last_updated: new Date().toISOString(),
+                group_id: gid,
+                score: score_total,
+                rank,
+                // 下書きのアドバイスを優先（無ければ現在state）
+                advice: (progressDraft.advice?.length ? progressDraft.advice : (advice || []))
+                    .map((a) => ({ msg: a, done: false })),
+                // ユーザー希望に合わせ、集計時刻は下書きの created_at を使う
+                last_updated: progressDraft.created_at || new Date().toISOString(),
+                // 追加情報（サーバーが無視してもOK）
+                answers_count: progressDraft.answers_count ?? answersArray.length,
+                created_at: progressDraft.created_at || new Date().toISOString(),
             };
             const r = await fetch(`${API_BASE}/progress/update`, {
                 method: "POST",
@@ -579,7 +608,11 @@ export default function App() {
             });
             await r.json();
             alert("進捗を送信しました");
-            await fetchGroupProgress(groupId.trim());
+            await fetchGroupProgress(gid);
+            // 送信後は下書きをクリアしておく（任意）
+            setProgressDraft((_) => ({
+                created_at: null, group_id: gid, score_total: null, rank: "", answers_count: 0, advice: [],
+            }));
         } catch (err) {
             console.error(err);
             alert(`進捗送信に失敗しました：${err?.message ?? ""}`);
@@ -629,6 +662,7 @@ export default function App() {
             if (last.group_id) {
                 setGroupId(last.group_id);
                 localStorage.setItem(LS_GROUP_ID, last.group_id);
+                setProgressDraft((p) => ({ ...p, group_id: last.group_id }));
             }
         })();
     }, [userId]);
