@@ -519,6 +519,12 @@ export default function App() {
                 localStorage.setItem(LS_GROUP_ID, d.group_id); // ★ 追加
                 alert(`グループを作成しました: ${d.group_id}`);
                 await fetchGroupProgress(d.group_id);
+                // ★ 追加：所属だけを記録（管理画面の「所属チーム」に反映させる）
+                await saveResponse({
+                    user_id: userId,
+                    user_name: userName,
+                    group_id: d.group_id,
+                });
             }
         } catch (err) {
             console.error(err);
@@ -540,6 +546,12 @@ export default function App() {
                 alert("参加しました");
                 localStorage.setItem(LS_GROUP_ID, gid); // ★ 追加：保持
                 await fetchGroupProgress(gid);
+                // ★ 追加：所属だけを記録
+                await saveResponse({
+                    user_id: userId,
+                    user_name: userName,
+                    group_id: gid,
+                });
             }
         } catch (err) {
             console.error(err);
