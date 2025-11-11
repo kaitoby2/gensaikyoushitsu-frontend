@@ -330,12 +330,14 @@ button {
 
 /* 画像ボックス */
 .imgbox {
+    display: block;         /* ← 追加：inline のベースラインずれを防止 */
+    margin: 0;              /* ← 追加：余計な行高を持たせない */
     width: 100%;
     height: auto;
     max-height: 360px;
     object-fit: contain;
     border: 1px solid var(--stroke);
-    border-radius: 12px
+    border-radius: 12px;
 }
 
 /* 進捗テーブル */
