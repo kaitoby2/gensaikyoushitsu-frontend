@@ -97,7 +97,7 @@ export default function App() {
     const [adminScreen, setAdminScreen] = useState("list"); // list | detail
     const [adminSelectedUser, setAdminSelectedUser] = useState(null);
     const [adminRows, setAdminRows] = useState([]); // /admin/responses
-    
+
     /** ============ ユーザー切替時クリア ============ */
     const clearPerUserState = () => {
         // 設問・スコア・助言
@@ -546,7 +546,7 @@ export default function App() {
                 localStorage.setItem(LS_GROUP_ID, d.group_id); // ★ 追加
                 setProgressDraft((p) => ({ ...p, group_id: d.group_id }));
                 alert(`グループを作成しました: ${d.group_id}`);
-                await fetchGroupProgress(d.group_id);   
+                await fetchGroupProgress(d.group_id);
             }
         } catch (err) {
             console.error(err);
@@ -670,88 +670,88 @@ export default function App() {
     /** ============ ここから画面切り替え描画 ============ */
     // === 管理者画面 ===
     if (screen === "admin") {
-      return (
-        <div className="container">
-          <h1>管理者ダッシュボード</h1>
-          <div className="row" style={{ gap: 8, marginBottom: 12 }}>
-            <button onClick={async () => {
-              const u = await apiGetAuth("/admin/users", adminToken);
-              setAdminUsers(Array.isArray(u.users) ? u.users : []);
-              setAdminScreen("list");
-            }}>更新</button>
-            <button onClick={() => { setScreen("login"); setAdminToken(""); }}>ログアウト</button>
-          </div>
-    
-          {adminScreen === "list" && (
-            <table className="progress-table">
-              <thead>
-                <tr>
-                  <th>ユーザー</th>
-                  <th>ID</th>
-                  <th>件数</th>
-                  <th>最終回答</th>
-                  <th>所属チーム</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {(adminUsers || []).map((u, i) => (
-                  <tr key={i}>
-                    <td>{u.user_name || "(未設定)"}</td>
-                    <td><code>{u.user_id}</code></td>
-                    <td>{u.count}</td>
-                    <td>{u.last_seen}</td>
-                    <td>{(u.groups || []).join(", ") || "-"}</td>  {/* ★ 修正：groups */}
-                    <td>
-                      <button onClick={async () => {
-                        setAdminSelectedUser(u);
-                        const rows = await apiGetAuth(`/admin/responses?user_id=${encodeURIComponent(u.user_id)}`, adminToken);
-                        setAdminRows(Array.isArray(rows) ? rows : []);
-                        setAdminScreen("detail");
-                      }}>詳細</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-    
-          {adminScreen === "detail" && (
-            <div>
-              <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                <h2 style={{ margin: 0 }}>ユーザー詳細：{adminSelectedUser?.user_name || "(未設定)"} (<code>{adminSelectedUser?.user_id}</code>)</h2>
-                <button onClick={() => setAdminScreen("list")}>一覧に戻る</button>
-              </div>
-              <table className="progress-table" style={{ marginTop: 12 }}>
-                <thead>
-                  <tr>
-                    <th>日時</th>
-                    <th>チーム</th>
-                    <th>スコア</th>
-                    <th>回答数</th>
-                    <th>アドバイス</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(adminRows || []).map((r, i) => (
-                    <tr key={i}>
-                      <td>{r.created_at}</td>
-                      <td>{r.group_id || "-"}</td>  {/* ★ 修正：group_id */}
-                      <td>{r.score ?? "-"}</td>
-                      <td>{Array.isArray(r.answers) ? r.answers.length : 0}</td>
-                      <td>
-                        <ul style={{ margin: 0, paddingLeft: 16 }}>
-                          {(r.advice || []).map((a, j) => <li key={j}>{a}</li>)}
-                        </ul>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        return (
+            <div className="container">
+                <h1>管理者ダッシュボード</h1>
+                <div className="row" style={{ gap: 8, marginBottom: 12 }}>
+                    <button onClick={async () => {
+                        const u = await apiGetAuth("/admin/users", adminToken);
+                        setAdminUsers(Array.isArray(u.users) ? u.users : []);
+                        setAdminScreen("list");
+                    }}>更新</button>
+                    <button onClick={() => { setScreen("login"); setAdminToken(""); }}>ログアウト</button>
+                </div>
+
+                {adminScreen === "list" && (
+                    <table className="progress-table">
+                        <thead>
+                            <tr>
+                                <th>ユーザー</th>
+                                <th>ID</th>
+                                <th>件数</th>
+                                <th>最終回答</th>
+                                <th>所属チーム</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {(adminUsers || []).map((u, i) => (
+                                <tr key={i}>
+                                    <td>{u.user_name || "(未設定)"}</td>
+                                    <td><code>{u.user_id}</code></td>
+                                    <td>{u.count}</td>
+                                    <td>{u.last_seen}</td>
+                                    <td>{(u.groups || []).join(", ") || "-"}</td>  {/* ★ 修正：groups */}
+                                    <td>
+                                        <button onClick={async () => {
+                                            setAdminSelectedUser(u);
+                                            const rows = await apiGetAuth(`/admin/responses?user_id=${encodeURIComponent(u.user_id)}`, adminToken);
+                                            setAdminRows(Array.isArray(rows) ? rows : []);
+                                            setAdminScreen("detail");
+                                        }}>詳細</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+
+                {adminScreen === "detail" && (
+                    <div>
+                        <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                            <h2 style={{ margin: 0 }}>ユーザー詳細：{adminSelectedUser?.user_name || "(未設定)"} (<code>{adminSelectedUser?.user_id}</code>)</h2>
+                            <button onClick={() => setAdminScreen("list")}>一覧に戻る</button>
+                        </div>
+                        <table className="progress-table" style={{ marginTop: 12 }}>
+                            <thead>
+                                <tr>
+                                    <th>日時</th>
+                                    <th>チーム</th>
+                                    <th>スコア</th>
+                                    <th>回答数</th>
+                                    <th>アドバイス</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(adminRows || []).map((r, i) => (
+                                    <tr key={i}>
+                                        <td>{r.created_at}</td>
+                                        <td>{r.group_id || "-"}</td>  {/* ★ 修正：group_id */}
+                                        <td>{r.score ?? "-"}</td>
+                                        <td>{Array.isArray(r.answers) ? r.answers.length : 0}</td>
+                                        <td>
+                                            <ul style={{ margin: 0, paddingLeft: 16 }}>
+                                                {(r.advice || []).map((a, j) => <li key={j}>{a}</li>)}
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
-          )}
-        </div>
-      );
+        );
     }
 
     // ログイン画面（既存ユーザーを選ぶ）
@@ -860,37 +860,37 @@ export default function App() {
                     {/* 管理者ログイン */}
                     <button
                         onClick={async () => {
-                        const t = prompt("管理者トークンを入力してください");
-                        if (!t) return;
-                        try {
-                        　await apiGetAuth("/admin/ping", t);
-                        　setAdminToken(t);
-                        　const u = await apiGetAuth("/admin/users", t);
-                        　setAdminUsers(Array.isArray(u.users) ? u.users : []);
-                        　setScreen("admin");
-                        } catch (e) {
-                        　alert("認証に失敗しました: " + (e?.message || ""));
-                        }
-                    　}}
-                    　style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        borderRadius: 10,
-                        border: "1px solid #94a3b8",
-                        background: "#fff",
-                        color: "#0f172a",
-                        fontSize: 14,
-                        cursor: "pointer",
-                        marginTop: 12,
-                    　}}
+                            const t = prompt("管理者トークンを入力してください");
+                            if (!t) return;
+                            try {
+                                await apiGetAuth("/admin/ping", t);
+                                setAdminToken(t);
+                                const u = await apiGetAuth("/admin/users", t);
+                                setAdminUsers(Array.isArray(u.users) ? u.users : []);
+                                setScreen("admin");
+                            } catch (e) {
+                                alert("認証に失敗しました: " + (e?.message || ""));
+                            }
+                        }}
+                        style={{
+                            width: "100%",
+                            padding: "10px 14px",
+                            borderRadius: 10,
+                            border: "1px solid #94a3b8",
+                            background: "#fff",
+                            color: "#0f172a",
+                            fontSize: 14,
+                            cursor: "pointer",
+                            marginTop: 12,
+                        }}
                     >
-                    　管理者ログイン
+                        管理者ログイン
                     </button>
                 </div>
             </div>
         );
     }
-    
+
     // 新規ユーザー登録画面
     if (screen === "create") {
         return (
@@ -1224,46 +1224,70 @@ export default function App() {
 
                     <div className="divider" />
 
-                    <div className="photo">
-                        {/* 左：元画像 */}
-                        <div className="photo-col">
-                            <label className="file">
-                                画像から推定：
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => onPickPhoto(e.target.files?.[0])}
-                                />
-                            </label>
-                            <div className="muted">※ 500ml / 2L ボトルの検出に対応</div>
+                    {/* アップロードUIは画像グリッドの“外”に置く */}
+                    <label className="file" style={{ display: "inline-block", marginBottom: 6 }}>
+                        画像から推定：
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => onPickPhoto(e.target.files?.[0])}
+                        />
+                    </label>
+                    <div className="muted" style={{ marginBottom: 8 }}>
+                        ※ 500ml / 2L ボトルの検出に対応
+                    </div>
 
+                    {/* 左右を平行配置（左｜→｜右） */}
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 56px 1fr",
+                            gap: 12,
+                            alignItems: "start", // ← 上端揃え
+                        }}
+                    >
+                        {/* 左：プレビュー */}
+                        <div>
                             {photoPreviewUrl && (
                                 <>
-                                    <div className="muted" style={{ marginTop: 6 }}>
+                                    <div className="muted" style={{ minHeight: 22, marginBottom: 6 }}>
                                         プレビュー（送信した画像）
                                     </div>
-                                    <img src={photoPreviewUrl} alt="preview" className="imgbox" />
+                                    <img
+                                        src={photoPreviewUrl}
+                                        alt="preview"
+                                        className="imgbox"
+                                        style={{ display: "block", margin: 0 }}
+                                    />
                                 </>
                             )}
                         </div>
 
-                        {/* 真ん中：矢印（検出結果があるときだけ表示） */}
-                        {photoPreviewUrl && photoResultUrl && (
-                            <div className="photo-arrow" aria-hidden="true">
-                                ➜
-                            </div>
-                        )}
+                        {/* 中央：矢印（画像がどちらかあれば表示） */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {(photoPreviewUrl || photoResultUrl) && (
+                                <span aria-hidden="true" style={{ fontSize: 28 }}>→</span>
+                            )}
+                        </div>
 
                         {/* 右：検出結果 */}
-                        <div className="photo-col">
+                        <div>
                             {photoResultUrl && (
                                 <>
-                                    <div className="muted">検出結果（可視化）</div>
-                                    <img src={photoResultUrl} alt="result" className="imgbox" />
+                                    <div className="muted" style={{ minHeight: 22, marginBottom: 6 }}>
+                                        検出結果（可視化）
+                                    </div>
+                                    <img
+                                        src={photoResultUrl}
+                                        alt="result"
+                                        className="imgbox"
+                                        style={{ display: "block", margin: 0 }}
+                                    />
                                 </>
                             )}
                         </div>
                     </div>
+
 
 
                     {invResult && (
