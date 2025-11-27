@@ -178,6 +178,9 @@ export default function App() {
         setPhotoPreviewUrl("");
         setPhotoResultUrl("");
         setBusy(false);
+        setBusyInventory(false);   // ★ 追加：飲料水診断フラグもオフ
+        setTipOrder([]);           // ★ 追加：Tips の順番もリセット
+        setTipPointer(0);          // ★ 追加：表示位置もリセット
         setErr("");
 
         // シナリオの進行
@@ -397,25 +400,26 @@ export default function App() {
     const [invResult, setInvResult] = useState(null);
     const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
     const [photoResultUrl, setPhotoResultUrl] = useState("");
-    const [busy, setBusy] = useState(false);
+    const [busy, setBusy] = useState(false);              // 全体の処理中フラグ
+    const [busyInventory, setBusyInventory] = useState(false); // ★ 追加：飲料水診断専用フラグ
     const [err, setErr] = useState("");
 
-    // ★ 追加：Tipsの表示順（インデックスのシャッフル結果）と今どこまで使ったか
+    // ★ Tipsの表示順（インデックスのシャッフル結果）と今どこまで使ったか
     const [tipOrder, setTipOrder] = useState([]);
     const [tipPointer, setTipPointer] = useState(0);
 
-    // ★ 追加：busyになったタイミングでシャッフル順を作る
+        // ★ 飲料水診断中（busyInventory）がONになったタイミングでシャッフル順を作る
     useEffect(() => {
-        if (busy) {
+        if (busyInventory) {
             const order = shuffleArray([...Array(TIPS.length).keys()]);
             setTipOrder(order);
             setTipPointer(0);
         }
-    }, [busy]);
+    }, [busyInventory]);
 
-    // ★ 追加：busy中だけ一定間隔で次のTipsへ（少しゆっくり：5秒おき）
+    // ★ 飲料水診断中だけ一定間隔で次のTipsへ（少しゆっくり：5秒おき）
     useEffect(() => {
-        if (!busy || tipOrder.length === 0) return;
+        if (!busyInventory || tipOrder.length === 0) return;
 
         const id = setInterval(() => {
             setTipPointer((prev) => {
@@ -430,12 +434,14 @@ export default function App() {
         }, 5000); // ← ここを変えればスピード調整可能（ミリ秒）
 
         return () => clearInterval(id);
-    }, [busy, tipOrder]);
+    }, [busyInventory, tipOrder]);
 
     const analyzeInventory = async (e) => {
         e?.preventDefault();
         setErr("");
         setBusy(true);
+        setBusyInventory(true);  // ★ 追加：飲料水診断中スタート
+
         try {
             const qs = new URLSearchParams({
                 water_l: String(calcWaterLiters),
@@ -449,8 +455,10 @@ export default function App() {
             setErr(error?.message || "診断に失敗しました");
         } finally {
             setBusy(false);
+            setBusyInventory(false); // ★ 追加：飲料水診断終了
         }
     };
+
 
     const onPickPhoto = async (file) => {
         if (!file) return;
@@ -463,7 +471,8 @@ export default function App() {
 
         setErr("");
         setBusy(true);
-        setPhotoResultUrl(""); // 前の結果画像をクリア
+        setBusyInventory(true);      // ★ 追加：画像解析中＝飲料水診断中
+        setPhotoResultUrl("");       // 前の結果画像をクリア
 
         try {
             // プレビュー
@@ -471,9 +480,9 @@ export default function App() {
 
             // FormData: バックエンドの両パターンに対応（"file" / "image"）
             const fd = new FormData();
-            fd.append("image", file);     // FastAPIが"image"という名前で受け取る場合
-            fd.append("persons", String(inv.persons));  // 人数情報を添付
-            fd.append("conf_thresh", "0.5");  // 信頼度の閾値
+            fd.append("image", file);                 // FastAPIが"image"という名前で受け取る場合
+            fd.append("persons", String(inv.persons)); // 人数情報を添付
+            fd.append("conf_thresh", "0.5");          // 信頼度の閾値
 
             // 画像アップロード（共通ヘルパーでの送信）
             const response = await apiUpload(`/inventory/photo`, fd);
@@ -499,9 +508,11 @@ export default function App() {
         } catch (error) {
             setErr(error?.message || "画像解析に失敗しました");  // エラーメッセージをセット
         } finally {
-            setBusy(false);  // 処理終了
+            setBusy(false);           // 処理終了
+            setBusyInventory(false);  // ★ 追加：飲料水診断フラグもオフ
         }
     };
+
 
     /** ============ 評価 & 保存/復元 ============ */
     const answersArray = useMemo(
@@ -1386,8 +1397,8 @@ export default function App() {
                         </div>
                     </div>
                     
-                    {/* ★ busy中だけ、防災Tipsをランダム表示 */}
-                    {busy && tipOrder.length > 0 && (
+                    {/* ★ 飲料水診断中（busyInventory）だけ、防災Tipsをランダム表示 */}
+                    {busyInventory && tipOrder.length > 0 && (
                         <div className="tips-box">
                             <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
                                 画像や水の量を解析しています…少しお待ちください。
