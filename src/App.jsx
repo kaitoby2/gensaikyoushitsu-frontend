@@ -352,7 +352,7 @@ export default function App() {
 
         const id = setInterval(() => {
             setTipIndex((i) => (i + 1) % TIPS.length);
-        }, 2500);
+        }, 4000);
 
         // busy が false になったりコンポーネントが外れたら停止
         return () => clearInterval(id);
