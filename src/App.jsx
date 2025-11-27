@@ -10,6 +10,15 @@ const LS_LEGACY_NAME = "demo_user_name";
 const LS_LEGACY_ID = "demo_user_id";
 const LS_GROUP_ID = "demo_group_id"; // ★ 追加：チームID保存用キー
 
+/** ====== 解析中に表示する防災 Tips ====== */
+const TIPS = [
+    "大人1人あたり1日3Lの飲料水が目安です。",
+    "飲料水とは別に、トイレなどに使える生活用水もあると安心です。",
+    "ペットボトルの水は、ローリングストックで日常的に使いながら備蓄できます。",
+    "最低3日分、できれば7日分以上の水を用意しておくと安心です。",
+    "重い水は一度に運ぶのが大変なので、日常の買い物に少しずつ足して備蓄すると続けやすいです。",
+];
+
 /** ====== ユーティリティ ====== */
 const generateUserId = () => "u" + Math.random().toString(36).slice(2, 10);
 const loadUsers = () => {
@@ -333,6 +342,21 @@ export default function App() {
     const [photoResultUrl, setPhotoResultUrl] = useState("");
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState("");
+
+    // ★ 追加：解析中に表示する Tips のインデックス
+    const [tipIndex, setTipIndex] = useState(0);
+
+    // ★ 追加：busy 中だけ 2.5 秒ごとに Tips を切り替える
+    useEffect(() => {
+        if (!busy) return; // 待ち状態でなければ何もしない
+
+        const id = setInterval(() => {
+            setTipIndex((i) => (i + 1) % TIPS.length);
+        }, 2500);
+
+        // busy が false になったりコンポーネントが外れたら停止
+        return () => clearInterval(id);
+    }, [busy]);
 
     const analyzeInventory = async (e) => {
         e?.preventDefault();
@@ -1287,9 +1311,20 @@ export default function App() {
                             )}
                         </div>
                     </div>
-
-
-
+                    
+                    {/* ★ 追加：解析中に表示する防災 Tips */}
+                    {busy && (
+                        <div className="tips-box">
+                            <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
+                                画像や水量を解析しています…通常 1分ほどかかります。
+                            </div>
+                            <div className="tips-title">💡 防災ワンポイント</div>
+                            <div className="tips-content">
+                                {TIPS[tipIndex]}
+                            </div>
+                        </div>
+                    )}
+                    
                     {invResult && (
                         <div className="muted result">
                             推定備蓄日数：<b>{invResult.estimated_days}</b> 日（指標：水）
