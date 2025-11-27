@@ -340,7 +340,8 @@ button {
     border-radius: 12px;
 }
 
-/* ★ 追加：解析中に表示する防災 Tips ボックス */
+
+/* ★ 解析中に表示する防災Tipsボックス */
 .tips-box {
     margin-top: 16px;
     padding: 12px 16px;
@@ -362,7 +363,7 @@ button {
     line-height: 1.5;
 }
 
-/* ★ 追加：ふわっと表示させるアニメーション */
+/* ふわっと出すアニメーション */
 @keyframes tips-fade-in {
     from {
         opacity: 0;
