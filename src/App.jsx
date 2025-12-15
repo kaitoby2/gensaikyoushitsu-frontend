@@ -1214,30 +1214,34 @@ export default function App() {
                                     </p>
                                 )}
                                 {visitedNodes.map((node, idx) => {
-                                    const isLast = idx === visitedIds.length - 1;
-                                    return (
-                                        <div key={node.id} style={{ marginBottom: 12 }}>
-                                            <p style={{ whiteSpace: "pre-wrap", marginBottom: 8 }}>{node.text}</p>
-                                            {isLast ? (
-                                                <div className="row" style={{ gap: 8, flexWrap: "wrap", marginTop: 4, justifyContent: "center" }}>
-                                                    {(node.choices ?? []).map((c, i) => (
-                                                        <button
-                                                            key={`${node.id}-${i}`}
-                                                            onClick={() => jumpTo(c.next, c.label)}
-                                                            className="btn-primary"
-                                                            style={{ padding: "10px 14px" }}
-                                                        >
-                                                            {c.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="muted" style={{ fontSize: 13 }}>
-                                                    （経過）
-                                                </div>
-                                            )}
+                                  const isLast = idx === visitedIds.length - 1;
+                                
+                                  return (
+                                    <div
+                                      key={node.id}
+                                      className={`scenario-node ${isLast ? "is-current" : "is-old"}`}
+                                    >
+                                      <p style={{ whiteSpace: "pre-wrap", marginBottom: 8 }}>{node.text}</p>
+                                
+                                      {isLast && (
+                                        <div
+                                          className="row"
+                                          style={{ gap: 8, flexWrap: "wrap", marginTop: 4, justifyContent: "center" }}
+                                        >
+                                          {(node.choices ?? []).map((c, i) => (
+                                            <button
+                                              key={`${node.id}-${i}`}
+                                              onClick={() => jumpTo(c.next, c.label)}
+                                              className="btn-primary"
+                                              style={{ padding: "10px 14px" }}
+                                            >
+                                              {c.label}
+                                            </button>
+                                          ))}
                                         </div>
-                                    );
+                                      )}
+                                    </div>
+                                  );
                                 })}
                                 {activeScenario?.source_note && (
                                     <p className="muted" style={{ fontSize: 14 }}>
