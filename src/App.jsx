@@ -1128,7 +1128,7 @@ export default function App() {
 
                 {/* ① 地域シナリオ */}
                 <section className="card">
-                    <h2>もし48時間、雨が止まらなかったら？ ― 長良川流域で起こりうる現実から考える“いま備える理由” ―</h2>
+                    <h2>地域密着型のシナリオを読んでみよう！” ―</h2>
                     <div className="row" style={{ marginBottom: 8, gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
                         <label>
                             <input
