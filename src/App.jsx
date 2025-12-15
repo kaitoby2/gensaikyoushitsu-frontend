@@ -170,6 +170,8 @@ export default function App() {
         setAnswersMap({});
         setScore(null);
         setAdvice([]);
+        setSelectedAdviceMap({});
+        setPlanText("");
         setShowComparison(false);
 
         // 備蓄診断（水）
@@ -525,6 +527,10 @@ export default function App() {
     const [score, setScore] = useState(null);
     const [advice, setAdvice] = useState([]);
     const [showComparison, setShowComparison] = useState(false);
+    // ★追加：実行するアドバイス（チェック状態）
+    const [selectedAdviceMap, setSelectedAdviceMap] = useState({}); // { [adviceText]: boolean }
+    // ★追加：自由記述（どう達成するか）
+    const [planText, setPlanText] = useState("");
     const scored = !!score;
 
     async function saveResponse(payload) {
@@ -598,6 +604,11 @@ export default function App() {
             const d = await apiPost("/advice", body);
             const actions = Array.isArray(d.actions) ? d.actions : [];
             setAdvice(actions);
+            // ★追加：チェック状態を初期化（全部ON）
+            const init = {};
+            actions.forEach((a) => { init[a] = true; });
+            setSelectedAdviceMap(init);
+            setPlanText("");
 
             // 下書きにアドバイスと回答数・日時を保存（日時が未設定なら今）
             setProgressDraft((prev) => ({
@@ -693,22 +704,26 @@ export default function App() {
         const rank = progressDraft.rank ?? score?.rank;
         if (score_total == null || !rank) {
             return alert("先にスコア計算してください");
+        const selected_advice = (advice || []).filter((a) => !!selectedAdviceMap[a]);
+        const plan_text = planText.trim() || null;
         }
         try {
             const body = {
-                user_id: userId,
-                user_name: userName,
-                group_id: gid,
-                score: score_total,
-                rank,
-                // 下書きのアドバイスを優先（無ければ現在state）
-                advice: (progressDraft.advice?.length ? progressDraft.advice : (advice || []))
-                    .map((a) => ({ msg: a, done: false })),
-                // ユーザー希望に合わせ、集計時刻は下書きの created_at を使う
-                last_updated: progressDraft.created_at || new Date().toISOString(),
-                // 追加情報（サーバーが無視してもOK）
-                answers_count: progressDraft.answers_count ?? answersArray.length,
-                created_at: progressDraft.created_at || new Date().toISOString(),
+              user_id: userId,
+              user_name: userName,
+              group_id: gid,
+              score: score_total,
+              rank,
+              advice: (progressDraft.advice?.length ? progressDraft.advice : (advice || []))
+                .map((a) => ({ msg: a, done: false })),
+            
+              last_updated: progressDraft.created_at || new Date().toISOString(),
+              answers_count: progressDraft.answers_count ?? answersArray.length,
+              created_at: progressDraft.created_at || new Date().toISOString(),
+            
+              // ★追加（これが今回の肝）
+              selected_advice,
+              plan_text,
             };
             const r = await fetch(`${API_BASE}/progress/update`, {
                 method: "POST",
@@ -1477,6 +1492,55 @@ export default function App() {
                     {!!advice.length && (
                         <>
                             <ol>{advice.map((a, i) => <li key={i}>{a}</li>)}</ol>
+                          <div
+                            className="subcard"
+                            style={{ border: "1px solid #eee", borderRadius: 10, padding: 12, marginTop: 10 }}
+                          >
+                            <div style={{ fontWeight: 800, marginBottom: 8 }}>
+                              実行するアドバイスを選び、達成方法を書こう
+                            </div>
+                          
+                            {/* チェックリスト */}
+                            <div style={{ display: "grid", gap: 6, marginBottom: 10 }}>
+                              {advice.map((a, i) => (
+                                <label key={`${i}-${a}`} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={!!selectedAdviceMap[a]}
+                                    onChange={(e) =>
+                                      setSelectedAdviceMap((prev) => ({ ...prev, [a]: e.target.checked }))
+                                    }
+                                    style={{ marginTop: 3 }}
+                                  />
+                                  <span>{a}</span>
+                                </label>
+                              ))}
+                            </div>
+                          
+                            {/* 自由記述 */}
+                            <textarea
+                              value={planText}
+                              onChange={(e) => setPlanText(e.target.value)}
+                              placeholder={
+                                "例：\n・今週末に防災バッグを点検して不足品をメモする\n・次の買い物で水とライトを買い足す\n・家族と避難先をLINEで共有する"
+                              }
+                              rows={6}
+                              style={{
+                                width: "100%",
+                                boxSizing: "border-box",
+                                padding: 10,
+                                borderRadius: 10,
+                                border: "1px solid #d1d5db",
+                                resize: "vertical",
+                                fontSize: 14,
+                                lineHeight: 1.6,
+                              }}
+                            />
+                          
+                            <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+                              ※「進捗を送信」すると、この内容もチームに共有されます。
+                            </div>
+                          </div>
                             {!showComparison && (
                                 <div style={{ marginTop: 10 }}>
                                     <button onClick={() => setShowComparison(true)} className="btn-ghost" style={{ height: 44, fontSize: 16 }}>
@@ -1587,6 +1651,21 @@ export default function App() {
                                                             <li key={j}>{a.msg} {a.done ? "✅" : "⏳"}</li>
                                                         ))}
                                                     </ul>
+                                                  {Array.isArray(m.selected_advice) && m.selected_advice.length > 0 && (
+                                                    <div style={{ marginTop: 8 }}>
+                                                      <div className="muted" style={{ fontSize: 12 }}>実行予定：</div>
+                                                      <ul style={{ margin: 0, paddingLeft: 18 }}>
+                                                        {m.selected_advice.map((s, k) => <li key={k}>{s}</li>)}
+                                                      </ul>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {m.plan_text && (
+                                                    <details style={{ marginTop: 8 }}>
+                                                      <summary style={{ cursor: "pointer" }}>自由記述を見る</summary>
+                                                      <div style={{ whiteSpace: "pre-wrap", marginTop: 6 }}>{m.plan_text}</div>
+                                                    </details>
+                                                  )}
                                                 </td>
                                             </tr>
                                         ))}
