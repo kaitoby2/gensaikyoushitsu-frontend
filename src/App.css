@@ -438,3 +438,33 @@ button {
         color: #ef4444; /* 赤 */
         font-weight: 900;
     }
+
+/* ===== シナリオ：過去テキストをフェードアウトして消す ===== */
+.scenario-node {
+  overflow: hidden;
+  opacity: 1;
+  max-height: 3000px; /* 長文でも切れないように大きめ */
+  margin-bottom: 12px;
+
+  transition:
+    opacity 240ms ease,
+    max-height 360ms ease,
+    margin-bottom 360ms ease,
+    transform 240ms ease;
+  transform: translateY(0);
+}
+
+.scenario-node.is-old {
+  opacity: 0;
+  max-height: 0;
+  margin-bottom: 0;
+  transform: translateY(-6px);
+  pointer-events: none; /* 消えかけのボタン誤タップ防止 */
+}
+
+/* 動きが苦手な人向け */
+@media (prefers-reduced-motion: reduce) {
+  .scenario-node {
+    transition: none;
+  }
+}
