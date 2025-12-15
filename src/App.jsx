@@ -1128,7 +1128,7 @@ export default function App() {
 
                 {/* ① 地域シナリオ */}
                 <section className="card">
-                    <h2>地域密着型のシナリオを読んでみよう！” ―</h2>
+                    <h2>地域密着型のシナリオを読んでみよう！” </h2>
                     <div className="row" style={{ marginBottom: 8, gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
                         <label>
                             <input
