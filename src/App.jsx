@@ -697,50 +697,52 @@ export default function App() {
     };
 
     const updateProgress = async () => {
-        const gid = (progressDraft.group_id || groupId).trim();
-        if (!gid) return alert("チームIDが未入力です");
-        // スコアは下書き優先、なければ現在のscoreから
-        const score_total = progressDraft.score_total ?? score?.score_total;
-        const rank = progressDraft.rank ?? score?.rank;
-        if (score_total == null || !rank) {
-            return alert("先にスコア計算してください");
-        const selected_advice = (advice || []).filter((a) => !!selectedAdviceMap[a]);
-        const plan_text = planText.trim() || null;
-        }
-        try {
-            const body = {
-              user_id: userId,
-              user_name: userName,
-              group_id: gid,
-              score: score_total,
-              rank,
-              advice: (progressDraft.advice?.length ? progressDraft.advice : (advice || []))
-                .map((a) => ({ msg: a, done: false })),
-            
-              last_updated: progressDraft.created_at || new Date().toISOString(),
-              answers_count: progressDraft.answers_count ?? answersArray.length,
-              created_at: progressDraft.created_at || new Date().toISOString(),
-            
-              // ★追加（これが今回の肝）
-              selected_advice,
-              plan_text,
-            };
-            const r = await fetch(`${API_BASE}/progress/update`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
-            });
-            await r.json();
-            alert("進捗を送信しました");
-            await fetchGroupProgress(gid);
-            // 送信後は下書きをクリアしておく（任意）
-            setProgressDraft((_) => ({
-                created_at: null, group_id: gid, score_total: null, rank: "", answers_count: 0, advice: [],
-            }));
-        } catch (err) {
-            console.error(err);
-            alert(`進捗送信に失敗しました：${err?.message ?? ""}`);
-        }
+      const gid = ((progressDraft.group_id || groupId) || "").trim();
+      if (!gid) return alert("チームIDが未入力です");
+    
+      const score_total = progressDraft.score_total ?? score?.score_total;
+      const rank = progressDraft.rank ?? score?.rank;
+      if (score_total == null || !rank) {
+        return alert("先にスコア計算してください");
+      }
+    
+      // ✅ ここで作る（ifの外）
+      const selected_advice = (advice || []).filter((a) => !!selectedAdviceMap[a]);
+      const plan_text = planText.trim() || null;
+    
+      try {
+        const baseAdvice = (progressDraft.advice?.length ? progressDraft.advice : (advice || []));
+        const body = {
+          user_id: userId,
+          user_name: userName,
+          group_id: gid,
+          score: score_total,
+          rank,
+          advice: baseAdvice.map((a) => (typeof a === "string" ? { msg: a, done: false } : a)),
+          last_updated: progressDraft.created_at || new Date().toISOString(),
+          answers_count: progressDraft.answers_count ?? answersArray.length,
+          created_at: progressDraft.created_at || new Date().toISOString(),
+    
+          selected_advice,
+          plan_text,
+        };
+    
+        const r = await fetch(`${API_BASE}/progress/update`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+    
+        // ✅ 本番向け：HTTPエラーを握りつぶさない
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d?.error || JSON.stringify(d?.detail || d) || `HTTP ${r.status}`);
+    
+        alert("進捗を送信しました");
+        await fetchGroupProgress(gid);
+      } catch (err) {
+        console.error(err);
+        alert(`進捗送信に失敗しました：${err?.message ?? ""}`);
+      }
     };
 
     const fetchGroupProgress = async (gidOptional) => {
