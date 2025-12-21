@@ -405,6 +405,7 @@ export default function App() {
     const [busy, setBusy] = useState(false);              // 全体の処理中フラグ
     const [busyInventory, setBusyInventory] = useState(false); // ★ 追加：飲料水診断専用フラグ
     const [err, setErr] = useState("");
+    const [inventoryStatus, setInventoryStatus] = useState("");
 
     // ★ Tipsの表示順（インデックスのシャッフル結果）と今どこまで使ったか
     const [tipOrder, setTipOrder] = useState([]);
@@ -443,6 +444,7 @@ export default function App() {
         setErr("");
         setBusy(true);
         setBusyInventory(true);  // ★ 追加：飲料水診断中スタート
+        setInventoryStatus("水量を送信して備蓄日数を計算しています…");
 
         try {
             const qs = new URLSearchParams({
@@ -474,6 +476,7 @@ export default function App() {
         setErr("");
         setBusy(true);
         setBusyInventory(true);      // ★ 追加：画像解析中＝飲料水診断中
+        setInventoryStatus("画像をアップロードして解析しています…");
         setPhotoResultUrl("");       // 前の結果画像をクリア
 
         try {
@@ -512,6 +515,7 @@ export default function App() {
         } finally {
             setBusy(false);           // 処理終了
             setBusyInventory(false);  // ★ 追加：飲料水診断フラグもオフ
+            setInventoryStatus("");
         }
     };
 
@@ -1421,8 +1425,11 @@ export default function App() {
                     {/* ★ 飲料水診断中（busyInventory）だけ、防災Tipsをランダム表示 */}
                     {busyInventory && tipOrder.length > 0 && (
                         <div className="tips-box">
-                            <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
-                                画像や水の量を解析しています…少しお待ちください。
+                            <div className="loading-row">
+                              <span className="spinner" aria-hidden="true" />
+                              <div className="muted" style={{ fontSize: 13, marginBottom: 4 }}>
+                                {inventoryStatus || "解析しています…少しお待ちください。"}
+                              </div>
                             </div>
                             <div className="tips-title">💡 防災ワンポイント</div>
                             <div className="tips-content">
