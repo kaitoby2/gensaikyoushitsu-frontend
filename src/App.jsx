@@ -170,7 +170,7 @@ export default function App() {
         setAnswersMap({});
         setScore(null);
         setAdvice([]);
-        setSelectedAdviceMap({});
+        setSelectedAdvice("");
         setPlanText("");
         setShowComparison(false);
 
@@ -532,7 +532,7 @@ export default function App() {
     const [advice, setAdvice] = useState([]);
     const [showComparison, setShowComparison] = useState(false);
     // ★追加：実行するアドバイス（チェック状態）
-    const [selectedAdviceMap, setSelectedAdviceMap] = useState({}); // { [adviceText]: boolean }
+    const [selectedAdvice, setSelectedAdvice] = useState(""); // { [adviceText]: boolean }
     // ★追加：自由記述（どう達成するか）
     const [planText, setPlanText] = useState("");
     const scored = !!score;
@@ -608,10 +608,8 @@ export default function App() {
             const d = await apiPost("/advice", body);
             const actions = Array.isArray(d.actions) ? d.actions : [];
             setAdvice(actions);
-            // ★追加：チェック状態を初期化（全部ON）
-            const init = {};
-            actions.forEach((a) => { init[a] = true; });
-            setSelectedAdviceMap(init);
+            // ★変更：最初に「1つだけ」選択された状態にする（先頭を選択）
+            setSelectedAdvice("");
             setPlanText("");
 
             // 下書きにアドバイスと回答数・日時を保存（日時が未設定なら今）
@@ -711,8 +709,9 @@ export default function App() {
       }
     
       // ✅ ここで作る（ifの外）
-      const selected_advice = (advice || []).filter((a) => !!selectedAdviceMap[a]);
+      const selected_advice = selectedAdvice ? [selectedAdvice] : [];
       const plan_text = planText.trim() || null;
+
     
       try {
         const baseAdvice = (progressDraft.advice?.length ? progressDraft.advice : (advice || []));
@@ -1514,11 +1513,10 @@ export default function App() {
                               {advice.map((a, i) => (
                                 <label key={`${i}-${a}`} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                                   <input
-                                    type="checkbox"
-                                    checked={!!selectedAdviceMap[a]}
-                                    onChange={(e) =>
-                                      setSelectedAdviceMap((prev) => ({ ...prev, [a]: e.target.checked }))
-                                    }
+                                    type="radio"
+                                    name="selectedAdvice"
+                                    checked={selectedAdvice === a}
+                                    onChange={() => setSelectedAdvice(a)}
                                     style={{ marginTop: 3 }}
                                   />
                                   <span>{a}</span>
