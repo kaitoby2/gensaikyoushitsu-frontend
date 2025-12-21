@@ -351,6 +351,28 @@ button {
     animation: tips-fade-in 0.25s ease;
 }
 
+.loading-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0,0,0,0.12);
+  border-top-color: var(--brand-blue);
+  border-radius: 50%;
+  animation: spinner-rotate 0.8s linear infinite;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+@keyframes spinner-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 .tips-title {
     font-weight: 700;
     margin-bottom: 4px;
@@ -374,6 +396,7 @@ button {
         transform: translateY(0);
     }
 }
+
 
 /* 進捗テーブル */
 .progress-table {
